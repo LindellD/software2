@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Panel de Administración</h2>
+
+    <!-- Pestañas de navegación -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#reportes">Reportes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#usuarios">Usuarios</a>
+        </li>
+        {% if current_user.role_id == 1 %}
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#trabajadores">Gestión de Trabajadores</a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content">
+        <!-- Pestaña de Reportes -->
+        <div class="tab-pane fade show active" id="reportes">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Reportado por</th>
+                                    <th>Tipo</th>
+                                    <th>Ubicación</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                    <th>Evidencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reporte in reportes %}
+                                <tr>
+                                    <td>{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ reporte.creador.nombres }} {{ reporte.creador.apellidos }}</td>
+                                    <td>{{ reporte.tipo_contaminacion }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                                onclick="window.open('https://www.google.com/maps?q={{ reporte.latitud }},{{ reporte.longitud }}', '_blank')">
+                                            Ver en Mapa
+                                        </button>
+                                    </td>
+                                    <td>{{ reporte.descripcion }}</td>
+                                    <td>
+                                        {% if reporte.estado == 'pendiente' %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% elif reporte.estado == 'en_proceso' %}
+                                            <span class="badge bg-info">En Proceso</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Solucionado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reporte.estado == 'pendiente' %}
+                                            <form action="{{ url_for('atender_reporte', reporte_id=reporte.reporte_id) }}" method="POST" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-primary">Atender</button>
+                                            </form>
+                                        {% elif reporte.estado == 'en_proceso' %}
+                                            <button type="button" class="btn btn-sm btn-success" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalSolucion{{ reporte.reporte_id }}">
+                                                Marcar Solucionado
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reporte.imagen_data %}
+                                            <img src="{{ url_for('imagen_reporte', reporte_id=reporte.reporte_id) }}" 
+                                                 class="img-thumbnail" style="max-width: 100px; cursor: pointer"
+                                                 onclick="mostrarImagenCompleta({{ reporte.reporte_id }})">
+                                        {% else %}
+                                            <span class="text-muted">Sin imagen</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña de Usuarios -->
+        <div class="tab-pane fade" id="usuarios">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombres</th>
+                                    <th>Apellidos</th>
+                                    <th>DNI</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                <tr>
+                                    <td>{{ usuario.nombres }}</td>
+                                    <td>{{ usuario.apellidos }}</td>
+                                    <td>{{ usuario.dni }}</td>
+                                    <td>{{ usuario.email }}</td>
+                                    <td>
+                                        {% if usuario.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('ver_reportes_usuario', usuario_id=usuario.usuario_id) }}" 
+                                           class="btn btn-sm btn-info">
+                                            Ver Reportes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña de Gestión de Trabajadores -->
+        {% if current_user.role_id == 1 %}
+        <div class="tab-pane fade" id="trabajadores">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Botones de filtro -->
+                    <div class="mb-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" onclick="filtrarTrabajadores('activos')">
+                                Activos
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="filtrarTrabajadores('inactivos')">
+                                Inactivos
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="filtrarTrabajadores('todos')">
+                                Todos
+                            </button>
+                        </div>
+                        <button class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#modalRegistroTrabajador">
+                            Registrar Nuevo Trabajador
+                        </button>
+                    </div>
+
+                    <!-- Tabla de trabajadores -->
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombres</th>
+                                    <th>Apellidos</th>
+                                    <th>DNI</th>
+                                    <th>Email</th>
+                                    <th>Celular</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trabajador in trabajadores %}
+                                <tr class="trabajador-row" data-estado="{{ 'activo' if trabajador.activo else 'inactivo' }}">
+                                    <td>{{ trabajador.nombres }}</td>
+                                    <td>{{ trabajador.apellidos }}</td>
+                                    <td>{{ trabajador.dni }}</td>
+                                    <td>{{ trabajador.email }}</td>
+                                    <td>{{ trabajador.celular }}</td>
+                                    <td>
+                                        <span class="badge {% if trabajador.activo %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ 'Activo' if trabajador.activo else 'Inactivo' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('editar_trabajador', trabajador_id=trabajador.usuario_id) }}" 
+                                           class="btn btn-sm btn-primary">Editar</a>
+                                        <form action="{{ url_for('toggle_estado_trabajador', trabajador_id=trabajador.usuario_id) }}" 
+                                              method="POST" 
+                                              class="d-inline">
+                                            <button type="submit" 
+                                                    class="btn btn-sm {% if trabajador.activo %}btn-danger{% else %}btn-success{% endif %}">
+                                                {{ 'Desactivar' if trabajador.activo else 'Activar' }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modales para marcar como solucionado -->
+{% for reporte in reportes %}
+{% if reporte.estado == 'en_proceso' %}
+<div class="modal fade" id="modalSolucion{{ reporte.reporte_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Marcar Reporte como Solucionado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('marcar_solucionado', reporte_id=reporte.reporte_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="notas_solucion" class="form-label">Notas de la solución</label>
+                        <textarea class="form-control" name="notas_solucion" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Solución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% block scripts %}
+<script>
+function filtrarTrabajadores(filtro) {
+    // Remover clase active de todos los botones
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Agregar clase active al botón seleccionado
+    event.target.classList.add('active');
+    
+    // Mostrar/ocultar filas según el filtro
+    document.querySelectorAll('.trabajador-row').forEach(row => {
+        if (filtro === 'todos') {
+            row.style.display = '';
+        } else if (filtro === 'activos') {
+            row.style.display = row.dataset.estado === 'activo' ? '' : 'none';
+        } else if (filtro === 'inactivos') {
+            row.style.display = row.dataset.estado === 'inactivo' ? '' : 'none';
+        }
+    });
+}
+
+function mostrarImagenCompleta(reporteId) {
+    const modal = new bootstrap.Modal(document.getElementById('modalImagen'));
+    document.getElementById('imagenCompleta').src = `/imagen-reporte/${reporteId}`;
+    modal.show();
+}
+</script>
+{% endblock %}
+{% endblock %}

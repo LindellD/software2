@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Ver Reporte{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+    #reportMap {
+        height: 400px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>Reporte #{{ reporte.reporte_id }}</h4>
+        </div>
+        <div class="card-body">
+            <div id="reportMap"></div>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Estado:</strong> 
+                        {% if reporte.estado == 'pendiente' %}
+                            <span class="badge bg-warning">Pendiente</span>
+                        {% elif reporte.estado == 'en_proceso' %}
+                            <span class="badge bg-info">En Proceso</span>
+                        {% else %}
+                            <span class="badge bg-success">Solucionado</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Tipo:</strong> {{ reporte.tipo_contaminacion }}</p>
+                    <p><strong>Fecha de reporte:</strong> {{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Reportado por:</strong> {{ reporte.creador.nombres }} {{ reporte.creador.apellidos }}</p>
+                    {% if reporte.trabajador %}
+                    <p><strong>Atendido por:</strong> {{ reporte.trabajador.nombres }} {{ reporte.trabajador.apellidos }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <div id="mapa" style="height: 300px;"></div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <h5>Descripción</h5>
+                    <p>{{ reporte.descripcion }}</p>
+                </div>
+            </div>
+
+            {% if reporte.imagen_data %}
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <h5>Imagen del reporte</h5>
+                    <img src="{{ url_for('imagen_reporte', reporte_id=reporte.reporte_id) }}" 
+                         class="img-fluid rounded" 
+                         style="max-height: 300px;">
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <h5>Historial de acciones</h5>
+                    <div class="timeline">
+                        {% for accion in reporte.acciones|sort(attribute='fecha_accion', reverse=True) %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ accion.fecha_accion.strftime('%Y-%m-%d %H:%M') }}
+                                </h6>
+                                <p class="card-text">{{ accion.descripcion }}</p>
+                                {% if accion.imagen_data %}
+                                <img src="{{ url_for('imagen_accion', accion_id=accion.accion_id) }}" 
+                                     class="img-fluid rounded" 
+                                     style="max-height: 200px;">
+                                {% endif %}
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Por: {{ accion.usuario.nombres }} {{ accion.usuario.apellidos }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar el mapa con la ubicación del reporte
+        var map = L.map('reportMap').setView([{{ reporte.latitud }}, {{ reporte.longitud }}], 15);
+        
+        // Agregar el mapa base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Agregar marcador
+        L.marker([{{ reporte.latitud }}, {{ reporte.longitud }}]).addTo(map)
+            .bindPopup('Ubicación del reporte');
+    });
+    </script>
+
+{% block scripts %}
+<script>
+    // Inicializar mapa
+    var map = L.map('mapa').setView([{{ reporte.latitud }}, {{ reporte.longitud }}], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Agregar marcador
+    L.marker([{{ reporte.latitud }}, {{ reporte.longitud }}]).addTo(map);
+</script>
+{% endblock %}
+{% endblock %}

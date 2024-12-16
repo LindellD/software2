@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Notificaciones</h2>
+        {% if notificaciones|selectattr('leida', 'equalto', false)|list|length > 0 %}
+        <a href="{{ url_for('marcar_todas_leidas') }}" class="btn btn-primary">
+            Marcar todas como leídas
+        </a>
+        {% endif %}
+    </div>
+
+    {% if notificaciones %}
+        <div class="list-group">
+            {% for notificacion in notificaciones %}
+            <div class="list-group-item {% if not notificacion.leida %}list-group-item-primary{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">
+                        {% if not notificacion.leida %}
+                        <span class="badge bg-primary">Nueva</span>
+                        {% endif %}
+                        {{ notificacion.tipo|replace('_', ' ')|title }}
+                    </h5>
+                    <small class="text-muted">{{ notificacion.fecha.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                <p class="mb-1">{{ notificacion.mensaje }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <a href="{{ url_for('ver_reporte', reporte_id=notificacion.reporte_id) }}" 
+                       class="btn btn-sm btn-info">
+                        Ver reporte
+                    </a>
+                    {% if not notificacion.leida %}
+                    <a href="{{ url_for('marcar_notificacion_leida', notificacion_id=notificacion.notificacion_id) }}" 
+                       class="btn btn-sm btn-secondary">
+                        Marcar como leída
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No tienes notificaciones.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Ranking de Usuarios{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Ranking de Usuarios</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Usuario</th>
+                            <th>DNI</th>
+                            <th>Email</th>
+                            <th>Puntos</th>
+                            <th>Medalla</th>
+                            {% if current_user.role_id in [1, 2] %}
+                            <th>Acciones</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, usuario in enumerate(ranking, 1) %}
+                        <tr>
+                            <td>{{ index }}</td>
+                            <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
+                            <td>{{ usuario.dni }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>{{ usuario.total_puntos }}</td>
+                            <td>
+                                {% if index == 1 %}
+                                    <span class="badge bg-warning">🥇 Oro</span>
+                                {% elif index == 2 %}
+                                    <span class="badge bg-secondary">🥈 Plata</span>
+                                {% elif index == 3 %}
+                                    <span class="badge bg-danger">🥉 Bronce</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.role_id in [1, 2] %}
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalPuntos{{ usuario.usuario_id }}">
+                                    Asignar Puntos
+                                </button>
+                                <button type="button" class="btn btn-sm btn-info"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#historialPuntos{{ usuario.usuario_id }}">
+                                    Ver Historial
+                                </button>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role_id in [1, 2] %}
+{% for usuario in ranking %}
+<div class="modal fade" id="modalPuntos{{ usuario.usuario_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar Puntos a {{ usuario.nombres }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('asignar_puntos', usuario_id=usuario.usuario_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="puntos" class="form-label">Puntos</label>
+                        <input type="number" class="form-control" name="puntos" required min="1" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo</label>
+                        <textarea class="form-control" name="motivo" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Asignar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% if current_user.role_id in [1, 2] %}
+    {% for usuario in ranking %}
+    <!-- Modal para asignar puntos -->
+    <div class="modal fade" id="modalPuntos{{ usuario.usuario_id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar Puntos a {{ usuario.nombres }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('asignar_puntos', usuario_id=usuario.usuario_id) }}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="puntos" class="form-label">Puntos a asignar</label>
+                            <input type="number" class="form-control" name="puntos" 
+                                   required min="1" max="100" value="1">
+                            <small class="text-muted">Ingrese un número entre 1 y 100</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">Motivo</label>
+                            <textarea class="form-control" name="motivo" rows="3" 
+                                    required placeholder="Describa el motivo de la asignación de puntos"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Asignar Puntos</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver historial de puntos -->
+    <div class="modal fade" id="historialPuntos{{ usuario.usuario_id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Historial de Puntos - {{ usuario.nombres }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Puntos</th>
+                                <th>Motivo</th>
+                                <th>Asignado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for puntuacion in usuario.puntuaciones_recibidas %}
+                            <tr>
+                                <td>{{ puntuacion.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ puntuacion.puntos }}</td>
+                                <td>{{ puntuacion.motivo }}</td>
+                                <td>{{ puntuacion.asignado_por.nombres }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endblock %}

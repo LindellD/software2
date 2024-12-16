@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Trabajadores{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Trabajadores</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegistroTrabajador">
+            Registrar Nuevo Trabajador
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('admin_trabajadores', filtro='activos') }}" 
+                   class="btn btn-outline-primary {% if filtro_actual == 'activos' %}active{% endif %}">
+                    Activos
+                </a>
+                <a href="{{ url_for('admin_trabajadores', filtro='inactivos') }}" 
+                   class="btn btn-outline-primary {% if filtro_actual == 'inactivos' %}active{% endif %}">
+                    Inactivos
+                </a>
+                <a href="{{ url_for('admin_trabajadores', filtro='todos') }}" 
+                   class="btn btn-outline-primary {% if filtro_actual == 'todos' %}active{% endif %}">
+                    Todos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de trabajadores -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Apellidos</th>
+                            <th>DNI</th>
+                            <th>Email</th>
+                            <th>Celular</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trabajador in trabajadores %}
+                        <tr>
+                            <td>{{ trabajador.nombres }}</td>
+                            <td>{{ trabajador.apellidos }}</td>
+                            <td>{{ trabajador.dni }}</td>
+                            <td>{{ trabajador.email }}</td>
+                            <td>{{ trabajador.celular }}</td>
+                            <td>
+                                {% if trabajador.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('editar_trabajador', trabajador_id=trabajador.usuario_id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    Editar
+                                </a>
+                                <form action="{{ url_for('toggle_estado_trabajador', trabajador_id=trabajador.usuario_id) }}" 
+                                      method="POST" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-sm {% if trabajador.activo %}btn-danger{% else %}btn-success{% endif %}">
+                                        {% if trabajador.activo %}Desactivar{% else %}Activar{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de registro -->
+{% if current_user.role_id == 1 %}
+<div class="modal fade" id="modalRegistroTrabajador" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Nuevo Trabajador</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('registrar_trabajador') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI</label>
+                            <input type="text" class="form-control" id="dni" name="dni" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="celular" class="form-label">Celular</label>
+                            <input type="text" class="form-control" id="celular" name="celular">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Trabajador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

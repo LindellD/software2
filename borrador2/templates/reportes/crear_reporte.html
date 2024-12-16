@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Reporte{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+    #map {
+        height: 400px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .ubicacion-actual {
+        margin-bottom: 10px;
+    }
+    .imagen-preview {
+        max-width: 100%;
+        height: 200px;
+        object-fit: contain;
+        margin-top: 10px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4>Reportar Foco de Contaminación</h4>
+            </div>
+            <div class="card-body">
+                <div class="ubicacion-actual">
+                    <button type="button" onclick="obtenerUbicacion()" class="btn btn-info">
+                        Usar mi ubicación actual
+                    </button>
+                </div>
+                
+                <div id="map"></div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="latitud" class="form-label">Latitud</label>
+                            <input type="number" step="any" class="form-control" id="latitud" name="latitud" required readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="longitud" class="form-label">Longitud</label>
+                            <input type="number" step="any" class="form-control" id="longitud" name="longitud" required readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo_contaminacion" class="form-label">Tipo de Contaminación</label>
+                        <select class="form-select" id="tipo_contaminacion" name="tipo_contaminacion" required>
+                            <option value="">Seleccione un tipo...</option>
+                            <option value="basura">Basurero informal</option>
+                            <option value="desechos">Acumulación de desechos</option>
+                            <option value="escombros">Escombros</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="imagen" class="form-label">Fotografía</label>
+                        <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" onchange="previewImage(this)">
+                        <div class="mt-2">
+                            <img id="preview" class="imagen-preview">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Crear Reporte</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Inicializar el mapa centrado en Puno
+    var map = L.map('map').setView([-15.8422, -70.0199], 13);
+    
+    // Agregar el mapa base de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marcador = null;
+
+    // Función para actualizar el marcador y los campos de coordenadas
+    function actualizarUbicacion(lat, lng) {
+        if (marcador) {
+            map.removeLayer(marcador);
+        }
+
+        marcador = L.marker([lat, lng], {draggable: true}).addTo(map);
+        document.getElementById('latitud').value = lat.toFixed(6);
+        document.getElementById('longitud').value = lng.toFixed(6);
+
+        marcador.on('dragend', function(e) {
+            var pos = e.target.getLatLng();
+            document.getElementById('latitud').value = pos.lat.toFixed(6);
+            document.getElementById('longitud').value = pos.lng.toFixed(6);
+        });
+    }
+
+    // Evento de clic en el mapa
+    map.on('click', function(e) {
+        actualizarUbicacion(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Función para obtener ubicación actual
+    function obtenerUbicacion() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                
+                map.setView([lat, lng], 16);
+                actualizarUbicacion(lat, lng);
+            }, function(error) {
+                alert("Error al obtener la ubicación: " + error.message);
+            });
+        } else {
+            alert("Tu navegador no soporta geolocalización");
+        }
+    }
+
+    // Función para previsualizar la imagen
+    function previewImage(input) {
+        var preview = document.getElementById('preview');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}

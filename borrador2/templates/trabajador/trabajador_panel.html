@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Trabajador{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Panel de Trabajador</h2>
+
+    <!-- Pestañas de navegación -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#reportes-pendientes">Reportes Pendientes</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#mis-reportes">Mis Reportes Asignados</a>
+    </li>
+</ul>
+
+<!-- Contenido de las pestañas -->
+<div class="tab-content">
+    <!-- Pestaña de Reportes Pendientes -->
+    <div class="tab-pane fade show active" id="reportes-pendientes">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Reportado por</th>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                                <th>Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reporte in reportes_pendientes %}
+                            <tr>
+                                <td>{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ reporte.creador.nombres }} {{ reporte.creador.apellidos }}</td>
+                                <td>{{ reporte.tipo_contaminacion }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info" 
+                                            onclick="window.open('https://www.google.com/maps?q={{ reporte.latitud }},{{ reporte.longitud }}', '_blank')">
+                                        Ver en Mapa
+                                    </button>
+                                </td>
+                                <td>{{ reporte.descripcion }}</td>
+                                <td>
+                                    <form action="{{ url_for('atender_reporte', reporte_id=reporte.reporte_id) }}" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-primary">Atender</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if reporte.imagen_data %}
+                                        <img src="{{ url_for('imagen_reporte', reporte_id=reporte.reporte_id) }}" 
+                                             class="img-thumbnail" style="max-width: 100px; cursor: pointer"
+                                             onclick="mostrarImagenCompleta({{ reporte.reporte_id }})">
+                                    {% else %}
+                                        <span class="text-muted">Sin imagen</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña de Mis Reportes -->
+    <div class="tab-pane fade" id="mis-reportes">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Reportado por</th>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                                <th>Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reporte in reportes_asignados %}
+                            <tr>
+                                <td>{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ reporte.creador.nombres }} {{ reporte.creador.apellidos }}</td>
+                                <td>{{ reporte.tipo_contaminacion }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info" 
+                                            onclick="window.open('https://www.google.com/maps?q={{ reporte.latitud }},{{ reporte.longitud }}', '_blank')">
+                                        Ver en Mapa
+                                    </button>
+                                </td>
+                                <td>{{ reporte.descripcion }}</td>
+                                <td>
+                                    {% if reporte.estado == 'pendiente' %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% elif reporte.estado == 'en_proceso' %}
+                                        <span class="badge bg-info">En Proceso</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Solucionado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if reporte.estado == 'en_proceso' %}
+                                        <button type="button" class="btn btn-sm btn-success" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalSolucion{{ reporte.reporte_id }}">
+                                            Marcar Solucionado
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if reporte.imagen_data %}
+                                        <img src="{{ url_for('imagen_reporte', reporte_id=reporte.reporte_id) }}" 
+                                             class="img-thumbnail" style="max-width: 100px; cursor: pointer"
+                                             onclick="mostrarImagenCompleta({{ reporte.reporte_id }})">
+                                    {% else %}
+                                        <span class="text-muted">Sin imagen</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Modales para marcar como solucionado -->
+{% for reporte in reportes_asignados %}
+{% if reporte.estado == 'en_proceso' %}
+<div class="modal fade" id="modalSolucion{{ reporte.reporte_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Marcar Reporte como Solucionado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('marcar_solucionado', reporte_id=reporte.reporte_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="notas_solucion" class="form-label">Notas de la solución</label>
+                        <textarea class="form-control" name="notas_solucion" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Solución</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% block scripts %}
+<script>
+function mostrarImagenCompleta(reporteId) {
+    const modal = new bootstrap.Modal(document.getElementById('modalImagen'));
+    document.getElementById('imagenCompleta').src = `/imagen-reporte/${reporteId}`;
+    modal.show();
+}
+</script>
+{% endblock %}
+{% endblock %}

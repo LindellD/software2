@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes de {{ usuario.nombres }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Reportes de {{ usuario.nombres }} {{ usuario.apellidos }}</h2>
+    </div>
+
+    {% if reportes %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Ubicación</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Atendido por</th>
+                            <th>Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reporte in reportes %}
+                        <tr>
+                            <td>{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ reporte.tipo_contaminacion }}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-info" 
+                                        onclick="window.open('https://www.google.com/maps?q={{ reporte.latitud }},{{ reporte.longitud }}', '_blank')">
+                                    Ver en Mapa
+                                </button>
+                            </td>
+                            <td>{{ reporte.descripcion }}</td>
+                            <td>
+                                {% if reporte.estado == 'pendiente' %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                {% elif reporte.estado == 'en_proceso' %}
+                                    <span class="badge bg-info">En Proceso</span>
+                                {% else %}
+                                    <span class="badge bg-success">Solucionado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if reporte.trabajador %}
+                                    {{ reporte.trabajador.nombres }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if reporte.imagen_data %}
+                                    <img src="{{ url_for('imagen_reporte', reporte_id=reporte.reporte_id) }}" 
+                                         class="img-thumbnail" style="max-width: 100px; cursor: pointer"
+                                         onclick="mostrarImagenCompleta({{ reporte.reporte_id }})">
+                                {% else %}
+                                    <span class="text-muted">Sin imagen</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Este usuario no tiene reportes.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

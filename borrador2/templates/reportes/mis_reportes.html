@@ -1,0 +1,56 @@
+<!-- templates/reportes/mis_reportes.html -->
+{% extends "base.html" %}
+
+{% block title %}Mis Reportes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Mis Reportes</h2>
+    <div class="mb-3">
+        <a href="{{ url_for('crear_reporte') }}" class="btn btn-primary">Nuevo Reporte</a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Atendido por</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reporte in reportes %}
+                        <tr>
+                            <td>{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ reporte.tipo_contaminacion }}</td>
+                            <td>{{ reporte.descripcion }}</td>
+                            <td>
+                                {% if reporte.estado == 'pendiente' %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                {% elif reporte.estado == 'en_proceso' %}
+                                    <span class="badge bg-info">En Proceso</span>
+                                {% else %}
+                                    <span class="badge bg-success">Solucionado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if reporte.trabajador %}
+                                    {{ reporte.trabajador.nombres }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
