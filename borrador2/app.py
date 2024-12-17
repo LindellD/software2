@@ -412,35 +412,51 @@ def ver_reporte(reporte_id):
     
     return render_template('reportes/ver_reporte.html', reporte=reporte)
 
-
 @app.route('/ranking')
 @login_required
 def ranking_usuarios():
-    # Consulta corregida
+    # Consulta para obtener usuarios con sus puntuaciones
     usuarios_con_puntos = db.session.query(
         Usuario.usuario_id,
         Usuario.nombres,
         Usuario.apellidos,
         Usuario.dni,
+        Usuario.celular,
         Usuario.email,
+        Usuario.username,
         db.func.coalesce(db.func.sum(Puntuacion.puntos), 0).label('total_puntos')
-    ).filter(
-        Usuario.role_id == 3  # Solo usuarios normales
     ).outerjoin(
         Puntuacion, Usuario.usuario_id == Puntuacion.usuario_id
+    ).filter(
+        Usuario.role_id == 3  # Solo usuarios normales
     ).group_by(
         Usuario.usuario_id,
         Usuario.nombres,
         Usuario.apellidos,
         Usuario.dni,
-        Usuario.email
+        Usuario.celular,
+        Usuario.email,
+        Usuario.username
     ).order_by(
         db.desc('total_puntos')
     ).all()
-    
-    return render_template('ranking.html', ranking=usuarios_con_puntos)
-    
-    return render_template('ranking.html', ranking=usuarios_con_puntos)
+
+    # Obtener historial de puntuaciones para cada usuario
+    historiales = {}
+    for usuario in db.session.query(Usuario).filter_by(role_id=3):
+        historiales[usuario.usuario_id] = db.session.query(
+            Puntuacion
+        ).filter_by(
+            usuario_id=usuario.usuario_id
+        ).order_by(
+            Puntuacion.fecha.desc()
+        ).all()
+
+    return render_template('ranking.html', 
+                           ranking=usuarios_con_puntos,
+                           historiales=historiales)
+
+
 @app.route('/notificaciones')
 @login_required
 def ver_notificaciones():
@@ -548,9 +564,14 @@ def asignar_puntos(usuario_id):
 @app.route('/mapa-reportes')
 @login_required
 def mapa_reportes():
-    reportes = Reporte.query.all()
-    usuarios = Usuario.query.filter(Usuario.role_id == 3).all()  # Solo usuarios normales
-    return render_template('reportes/mapa_reportes.html', reportes=reportes, usuarios=usuarios)
+    # Obtener usuarios (suponiendo que tienes un modelo llamado Usuario)
+    usuarios = db.session.query(Usuario).filter_by(role_id=3).all()
+
+    # Obtener reportes
+    reportes = db.session.query(Reporte).all()
+
+    return render_template('reportes/mapa_reportes.html', usuarios=usuarios, reportes=reportes)
+
 if __name__ == '__main__':
     with app.app_context():
         try:

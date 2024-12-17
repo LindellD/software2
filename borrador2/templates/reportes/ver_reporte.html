@@ -121,5 +121,39 @@
     // Agregar marcador
     L.marker([{{ reporte.latitud }}, {{ reporte.longitud }}]).addTo(map);
 </script>
+<script>
+    // Datos de los reportes
+    var reportes = [
+        {% for reporte in reportes %}
+        {
+            id: {{ reporte.reporte_id }},
+            lat: {{ reporte.latitud }},
+            lng: {{ reporte.longitud }},
+            tipo: "{{ reporte.tipo_contaminacion }}",
+            estado: "{{ reporte.estado }}",
+            descripcion: "{{ reporte.descripcion }}",
+            fecha: "{{ reporte.fecha_reporte.strftime('%Y-%m-%d %H:%M') }}",
+            reportadoPor: "{{ reporte.creador.nombres }} {{ reporte.creador.apellidos }}",
+            usuario_id: {{ reporte.usuario_id }},  // Agregamos el ID del usuario
+            tieneImagen: {% if reporte.imagen_data %}true{% else %}false{% endif %}
+        },
+        {% endfor %}
+    ];
+
+    // Función para filtrar reportes por usuario
+    function filtrarReportesPorUsuario(usuarioId) {
+    Object.values(marcadores).forEach(grupo => {
+        grupo.clearLayers();
+    });
+
+    reportes.forEach(reporte => {
+        if (usuarioId === 'todos' || reporte.usuario_id === usuarioId) {
+            let marcador = crearMarcador(reporte);
+            marcadores[reporte.estado].addLayer(marcador);
+        }
+    });
+}
+</script>
+
 {% endblock %}
 {% endblock %}

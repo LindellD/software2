@@ -125,14 +125,15 @@
     </div>
 
     <!-- Modal para ver historial de puntos -->
-    <div class="modal fade" id="historialPuntos{{ usuario.usuario_id }}" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Historial de Puntos - {{ usuario.nombres }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
+<div class="modal fade" id="historialPuntos{{ usuario.usuario_id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Historial de Puntos - {{ usuario.nombres }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if historiales[usuario.usuario_id] %}
                     <table class="table">
                         <thead>
                             <tr>
@@ -143,20 +144,25 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for puntuacion in usuario.puntuaciones_recibidas %}
+                            {% for puntuacion in historiales[usuario.usuario_id] %}
                             <tr>
                                 <td>{{ puntuacion.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td>{{ puntuacion.puntos }}</td>
+                                <td>
+                                    <span class="badge bg-success">+{{ puntuacion.puntos }}</span>
+                                </td>
                                 <td>{{ puntuacion.motivo }}</td>
-                                <td>{{ puntuacion.asignado_por.nombres }}</td>
+                                <td>{{ puntuacion.asignado_por.nombres }} {{ puntuacion.asignado_por.apellidos }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
+                {% else %}
+                    <p class="text-muted">Este usuario aún no tiene puntos asignados.</p>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
     {% endfor %}
 {% endif %}
 {% endfor %}

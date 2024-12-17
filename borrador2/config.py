@@ -23,8 +23,8 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'tu-clave-secreta-aqui')
     
     # Configuración de SQL Server para base de datos local
-    #SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://LAPTOP-LN995LSI@localhost:1433/software2?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes"
-    SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://localhost/LAPTOP-LN995LSI?driver=ODBC+Driver+17+for+SQL+Server;Trusted_Connection=yes"
+    #SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://LAPTOP-LN995LSI@localhost/software2?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes"
+    SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://localhost/software2?driver=ODBC+Driver+17+for+SQL+Server;Trusted_Connection=yes"
 
     # Configuración adicional de SQLAlchemy
     SQLALCHEMY_TRACK_MODIFICATIONS = False
